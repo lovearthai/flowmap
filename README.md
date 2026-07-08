@@ -29,28 +29,46 @@ pip install flowmap
 
 ```
 
-### Usage Example
+# Usage
 
-Easily plug `FlowMap` into your existing PyTorch data pipeline:
+Run the following command in your terminal to scan a data directory and perform a stream iteration test:
+
+```bash
+flowmap-test /path/to/your/data
+```
+
+## What to expect
+
+The tool will automatically detect the data path, scan recursively for binary shards, and iterate through the data stream.
+
+You will see output similar to this:
+
+```plaintext
+2026-07-08 06:18:00 | INFO | 🔍 Starting scan and initializing FlowMapDataset: /data/raw_signals
+2026-07-08 06:18:05 | INFO | 📊 Total rows in dataset: 1048576
+2026-07-08 06:18:06 | INFO | 🚀 Starting data stream iteration test...
+2026-07-08 06:18:10 | INFO | Step 0: Distribution [0:128, 1:128, 2:128, 3:128]
+...
+2026-07-08 06:18:25 | INFO | ✅ Test passed: Recursive directory scan successful, data stream is fully operational!
+```
+
+# Usage Example
 
 ```python
 from flowmap import FlowMapDataset
 from torch.utils.data import DataLoader
 
-# Initialize the dataset
-dataset = FlowMapDataset(
-    data_path="path/to/your/data",
-    chunk_size=1024,
-    shuffle=True
-)
+# Initialize the dataset using recursive directory/glob support
+dataset = FlowMapDataset(shard_paths=["/data/signals/**/*.npy"], verbose=True)
 
-# Use DataLoader for distributed loading
-dataloader = DataLoader(dataset, batch_size=32, num_workers=4)
+# Wrap with standard PyTorch DataLoader
+dataloader = DataLoader(dataset, batch_size=512, num_workers=2)
 
-for batch in dataloader:
-    # Train your model...
-    pass
+print(f"Dataset ready with {len(dataset)} items.")
 
+for step, batch in enumerate(dataloader):
+    # Data is streamed directly from disk via mmap
+    process_data(batch)
 ```
 
 ---
